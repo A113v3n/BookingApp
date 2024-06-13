@@ -1,6 +1,19 @@
 // backend/controllers/adminController.ts
 import { Request, Response } from 'express';
 import Admin from '../models/Admin';
+import { AuthRequest } from '../middleware/authMiddleware';
+
+export const getAdminDashboard = async (req: AuthRequest, res: Response) => {
+  console.log('Starting getAdminDashboard...');
+  try {
+    console.log('Fetching dashboard data for user:', req.user);
+    // Implement your logic to fetch dashboard data here
+    res.status(200).json({ message: 'Admin Dashboard' });
+  } catch (error) {
+    console.error('Error in getAdminDashboard:', error);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+};
 
 export const getAdmins = async (req: Request, res: Response) => {
   console.log('GET /api/admin/ - Fetching all admins');

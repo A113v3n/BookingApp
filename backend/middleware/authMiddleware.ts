@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import Attendant from '../models/Attendant';
 import Admin from '../models/Admin'; // Add imports for other models if needed
+import Client from '../models/Client';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
@@ -45,6 +46,8 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
       userExists = !!(await Attendant.exists({ _id: decoded.id }));
     } else if (decoded.role === 'admin') {
       userExists = !!(await Admin.exists({ _id: decoded.id }));
+    } else if (decoded.role == 'client') {
+      userExists = !!(await Client.exists({ _id: decoded.id }));
     }
 
     if (!userExists) {

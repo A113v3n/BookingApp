@@ -86,36 +86,74 @@ export const loginAttendant = async (req: Request, res: Response) => {
 };
 
 // Client Registration
-export const registerClient = async (req: Request, res: Response) => {
-  const { firstName, lastName, email, password, phoneNumber } = req.body;
-  try {
-    const existingClient: IClient | null = await Client.findOne({ email });
-    if (existingClient) return res.status(400).json({ message: 'Client already exists' });
+// Ensure IClient is used properly
 
-    const hashedPassword = await bcrypt.hash(password, 12);
-    const newClient: IClient = new Client({ firstName, lastName, email, password: hashedPassword, phoneNumber, role: 'client' });
+export const registerClient = async (req: Request, res: Response) => {
+  console.log('Starting client registration...');
+  const { firstName, lastName, email, password, phoneNumber } = req.body;
+
+  try {
+    console.log('Checking if client already exists...');
+    const existingClient: IClient | null = await Client.findOne({ email });
+    if (existingClient) {
+      console.log('Client already exists with email:', email);
+      return res.status(400).json({ message: 'Client already exists' });
+    }
+
+    console.log('Hashing password...');
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    console.log('Creating new client...');
+    const newClient: IClient = new Client({
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+      phoneNumber,
+      role: 'client'
+    });
+
+    console.log('Saving client to database...');
     await newClient.save();
 
-    const token = generateToken(newClient._id.toString(), newClient.role);
-    res.status(201).json({ result: newClient, token });
+    console.log('Generating JWT token...');
+    const token = jwt.sign({ id: newClient._id, role: newClient.role }, JWT_SECRET, { expiresIn: '1h' });
+
+    console.log('Client registered successfully:', newClient);
+    res.status(201).json({ token });
   } catch (error) {
-    res.status(500).json({ message: 'Something went wrong' });
+    console.error('Error during client registration:', error);
+    res.status(500).json({ message: 'Something went wrong 4' });
   }
 };
+
 
 // Client Login
 export const loginClient = async (req: Request, res: Response) => {
   const { email, password } = req.body;
+
   try {
-    const existingClient: IClient | null = await Client.findOne({ email });
-    if (!existingClient) return res.status(404).json({ message: 'Client not found' });
+    console.log('Finding client by email:', email);
+    const client: IClient | null = await Client.findOne({ email });
+    if (!client) {
+      console.log('Client not found with email:', email);
+      return res.status(404).json({ message: 'Client not found' });
+    }
 
-    const isPasswordCorrect = await bcrypt.compare(password, existingClient.password);
-    if (!isPasswordCorrect) return res.status(400).json({ message: 'Invalid credentials' });
+    console.log('Comparing passwords for client:', client._id);
+    const isMatch = await bcrypt.compare(password, client.password);
+    if (!isMatch) {
+      console.log('Invalid credentials for client:', client._id);
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
 
-    const token = generateToken(existingClient._id.toString(), existingClient.role);
-    res.status(200).json({ result: existingClient, token });
+    console.log('Generating JWT token for client:', client._id);
+    const token = generateToken(client._id.toString(), 'client');
+
+    console.log('Client login successful:', client._id);
+    res.status(200).json({ token });
   } catch (error) {
-    res.status(500).json({ message: 'Something went wrong' });
+    console.error('Error during client login:', error);
+    res.status(500).json({ message: 'Something went wrong 1' });
   }
 };
