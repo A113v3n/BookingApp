@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Attendant from '../models/Attendant';
+import { AuthRequest } from '../middleware/authMiddleware';
 
 export const getAttendants = async (req: Request, res: Response) => {
   console.log('Starting getAttendants...');
@@ -29,9 +30,13 @@ export const getAttendantById = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteAttendant = async (req: Request, res: Response) => {
+export const deleteAttendant = async (req: AuthRequest, res: Response) => {
   console.log('Starting deleteAttendant with ID:', req.params.id);
   try {
+    if (req.user?.role !== 'admin' && req.user?.id.toString() !== req.params.id) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
     const attendant = await Attendant.findByIdAndDelete(req.params.id);
     if (!attendant) {
       console.log('Attendant not found with ID:', req.params.id);
@@ -45,11 +50,11 @@ export const deleteAttendant = async (req: Request, res: Response) => {
   }
 };
 
-export const getAttendantDashboard = async (req: Request, res: Response) => {
+export const getAttendantDashboard = async (req: AuthRequest, res: Response) => {
   console.log('Starting getAttendantDashboard...');
   try {
+    console.log('Fetching dashboard data for user:', req.user);
     // Implement your logic to fetch dashboard data here
-    console.log('Fetching dashboard data...');
     res.status(200).json({ message: 'Attendant Dashboard' });
   } catch (error) {
     console.error('Error in getAttendantDashboard:', error);
